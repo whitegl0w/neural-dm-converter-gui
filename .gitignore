@@ -1,0 +1,4 @@
+/.idea/
+*.avi
+/__pycache__/
+/depth_prediction/model.pt
