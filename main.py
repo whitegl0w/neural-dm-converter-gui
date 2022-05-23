@@ -1,5 +1,6 @@
 import sys
 from video_converter import convert
+import os
 
 
 def main():
@@ -8,4 +9,6 @@ def main():
 
 
 if __name__ == '__main__':
+    path, _ = os.path.split(os.path.abspath(__file__))
+    os.chdir(path)
     main()

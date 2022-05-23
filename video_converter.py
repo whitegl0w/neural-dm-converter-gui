@@ -7,7 +7,7 @@ from depth_prediction.run import run, prepare
 from numba import njit
 
 DIRECTION = 1
-MAX_PIXEL_OFFSET = 14
+MAX_PIXEL_OFFSET = 23
 model_path = "depth_prediction/model.pt"
 
 RED = 2
@@ -26,8 +26,6 @@ def convert2anaglyph(frame, depth_map):
     for x in range(depth_map.shape[0]):
         for y in range(depth_map.shape[1]):
             offset = math.floor((depth_map[x][y] / 255) * MAX_PIXEL_OFFSET * DIRECTION)
-            if offset > 20 or offset < 0:
-                print(offset)
             for k in range(min(offset + 1, depth_map.shape[1] - y)):
                 if not anaglyph[x, y + k, RED]:
                     anaglyph[x, y + k, RED] = frame[x, y, RED]
@@ -49,24 +47,28 @@ def convert(source: str, output: str):
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+    fourcc = cv2.VideoWriter_fourcc(*'X264')
 
     video_out = cv2.VideoWriter(output, fourcc, fps, (width, height))
     prepare(model_path)
 
     n = 0
-    while cap.isOpened():
-        ret, frame = cap.read()
-        n += 1
-        print(f"{n} - {frame_count}")
-        if frame is None:
-            break
-        anaglyph = prepare_frame(frame)
-        # cv2.imshow('Data', anaglyph)
-        video_out.write(anaglyph)
+    try:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            n += 1
+            print(f"{n} - {frame_count}")
+            if frame is None:
+                break
+            anaglyph = prepare_frame(frame)
+            # cv2.imshow('Data', anaglyph)
+            video_out.write(anaglyph)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        cap.release()
+        video_out.release()
 
-    cap.release()
-    video_out.release()
 
 
 
