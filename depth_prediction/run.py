@@ -55,12 +55,11 @@ def prepare(model_path):
     model.eval()
 
 
-def run(image_name):
+def run(image):
     global model, device
-    img_raw, img = utils.read_image(image_name)
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) / 255.0
     img_input = transform({"image": img})["image"]
 
-    # compute
     with torch.no_grad():
         sample = torch.from_numpy(img_input).to(device).unsqueeze(0)
         prediction = model.forward(sample)
