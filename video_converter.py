@@ -1,4 +1,7 @@
+import glob
 import math
+import os
+
 import cv2
 import numpy as np
 import numpy.typing as npt
@@ -6,7 +9,16 @@ from numba import njit
 from depth_prediction.run import run, prepare
 
 # model_path = "depth_prediction/model.pt"
-model_path = "depth_prediction/dpt_large-midas-2f21e586.pt"
+# model_path =
+
+models = {
+    'dpt_large': "depth_prediction/dpt_large-midas-2f21e586.pt",
+    'midas_v21': "depth_prediction/model.pt"
+}
+
+
+active_model = 'midas_v21'
+
 
 RED = 2
 GREEN = 1
@@ -69,7 +81,7 @@ def convert(source: str, output: str, anaglyph: bool = True):
     fourcc = cv2.VideoWriter_fourcc(*'X264')
 
     video_out = cv2.VideoWriter(output, fourcc, fps, (width, height))
-    prepare(model_path)
+    prepare(active_model, models[active_model])
 
     n = 0
     try:
@@ -98,7 +110,7 @@ def capture_camera(source: int, anaglyph: bool = False):
         print('Ошибка открытия камеры')
         exit(1)
 
-    prepare(model_path)
+    prepare(active_model, models[active_model])
 
     try:
         while True:
@@ -119,3 +131,51 @@ def capture_camera(source: int, anaglyph: bool = False):
     finally:
         cap.release()
         cv2.destroyAllWindows()
+
+
+def load_image(in_path, out_path, anaglyph: bool = False):
+    # get input
+    img_names = glob.glob(os.path.join(in_path, "*"))
+    num_images = len(img_names)
+    print(num_images)
+
+    # create output folder
+    os.makedirs(out_path, exist_ok=True)
+
+    prepare(active_model, models[active_model])
+
+    print("start processing")
+
+    for ind, img_name in enumerate(img_names):
+        print(f"{ind}: {img_name}")
+
+        img = cv2.imread(img_name)
+
+        filename = os.path.join(
+            out_path, os.path.splitext(os.path.basename(img_name))[0]
+        )
+
+        # convert_func = prepare_frame if anaglyph else run
+        # rez_img = convert_func(img)
+
+        # cv2.imwrite(filename + ".png", rez_img)
+
+        depth_map = run(img)
+        cv2.imwrite(filename + "_dm.png", depth_map)
+
+        depth_map = cv2.GaussianBlur(depth_map, (5, 5), 0)
+        d3d = convert2anaglyph(img, depth_map)
+        cv2.imwrite(filename + "_3d.png", d3d)
+
+        ldm = cv2.imread(filename + "_dm.png")
+        l3d = cv2.imread(filename + "_3d.png")
+        common = np.concatenate((l3d, ldm, img))
+        cv2.imwrite(filename + "_concat.png", common)
+
+        os.remove(filename + "_dm.png")
+        os.remove(filename + "_3d.png")
+
+
+        # depth_map = cv2.imread(filename + ".png")
+        # out = np.concatenate((depth_map, img))
+        # cv2.imwrite(filename + "_concat.png", out)

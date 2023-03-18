@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 
 
 class BaseModel(torch.nn.Module):
@@ -9,8 +8,7 @@ class BaseModel(torch.nn.Module):
         Args:
             path (str): file path
         """
-        map_location = "cuda" if torch.cuda.is_available() else "cpu"
-        parameters = torch.load(path, map_location=map_location)
+        parameters = torch.load(path, map_location=torch.device('cpu'))
 
         if "optimizer" in parameters:
             parameters = parameters["model"]

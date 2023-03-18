@@ -1,5 +1,8 @@
 /.idea/
 *.avi
-/__pycache__/
+*/__pycache__/*
 *.pt*
 *.dll
+*.pyc
+*.jpg
+*.png
