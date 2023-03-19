@@ -16,7 +16,7 @@ device = None
 transform = None
 
 
-def prepare(model_type, model_path):
+def prepare_model(model_type, model_path):
     global model, device, transform
     """Run MonoDepthNN to compute depth maps.
 
@@ -91,7 +91,7 @@ def prepare(model_type, model_path):
     model.eval()
 
 
-def run(image):
+def create_depth_map(image):
     global model, device
     img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) / 255.0
     img_input = transform({"image": img})["image"]
