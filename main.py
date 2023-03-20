@@ -1,10 +1,16 @@
 import cv2
 import os
+import sys
+
+from PyQt6.QtWidgets import QApplication
+
 from dmconvert.postprocessors import create_anaglyph_processor
 from dmconvert.converter import DmMediaConverter, DmMediaReader
 from dmconvert.readers import DmVideoReader, DmImagesReader
 from dmconvert.writers import DmScreenWriter, DmImageWriter, DmVideoWriter
 from argparse import ArgumentParser
+
+from user_ui.main_window import MainWindow
 
 models = {
     'dpt_large': "models/dpt_large-midas-2f21e586.pt",
@@ -12,7 +18,14 @@ models = {
 }
 
 
-def main():
+def use_ui():
+    qApp = QApplication(sys.argv)
+    window = MainWindow()
+    qApp.aboutToQuit.connect(window.prepare_for_exit)
+    exit(qApp.exec())
+
+
+def use_cli():
     parser = ArgumentParser(prog='Neural depth map tool')
     parser.add_argument('mode', type=str, help='Video source type CAM/FILE/IMG')
     parser.add_argument('source', type=str, help='Camera number for CAM, file path for FILE, folder path for IMG')
@@ -51,6 +64,13 @@ def main():
         converter.postprocessors.append(create_anaglyph_processor(10, 1))
 
     converter.start()
+
+
+def main():
+    if len(sys.argv) == 1:
+        use_ui()
+    else:
+        use_cli()
 
 
 if __name__ == '__main__':

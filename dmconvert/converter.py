@@ -45,8 +45,11 @@ class DmMediaConverter:
         self._reader = reader
         self._model_type = model_type
         self._model_path = model_path
+        self._is_running = False
 
     def start(self):
+        self._is_running = True
+
         media_params = self._reader.prepare()
         for writer in self.writers:
             writer.prepare(media_params)
@@ -55,6 +58,9 @@ class DmMediaConverter:
 
         try:
             for img in self._reader.data():
+                if not self._is_running:
+                    break
+
                 for preprocessor in self.preprocessors:
                     img = preprocessor(img)
 
@@ -68,6 +74,10 @@ class DmMediaConverter:
         except KeyboardInterrupt:
             pass
         finally:
+            print("closed")
             self._reader.close()
             for writer in self.writers:
                 writer.close()
+
+    def stop(self):
+        self._is_running = False
