@@ -3,13 +3,11 @@ import os
 import sys
 
 from PyQt6.QtWidgets import QApplication
-
 from dmconvert.postprocessors import create_anaglyph_processor
 from dmconvert.converter import DmMediaConverter, DmMediaReader
 from dmconvert.readers import DmVideoReader, DmImagesReader
 from dmconvert.writers import DmScreenWriter, DmImageWriter, DmVideoWriter
 from argparse import ArgumentParser
-
 from user_ui.main_window import MainWindow
 
 models = {

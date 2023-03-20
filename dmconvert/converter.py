@@ -1,8 +1,9 @@
+import numpy.typing as npt
+
 from dataclasses import dataclass
 from typing import Callable, Optional
 from depth_prediction.run import create_depth_map, prepare_model
 from abc import ABC, abstractmethod
-import numpy.typing as npt
 
 
 RED = 2
@@ -74,7 +75,6 @@ class DmMediaConverter:
         except KeyboardInterrupt:
             pass
         finally:
-            print("closed")
             self._reader.close()
             for writer in self.writers:
                 writer.close()

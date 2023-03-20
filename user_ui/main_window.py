@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+
 from PyQt6 import QtCore
 from PyQt6.QtCore import QThread
 from PyQt6.QtGui import QImage, QPixmap
@@ -60,6 +61,9 @@ class MainWindow(QMainWindow):
         pictures_layout = QHBoxLayout(self)
         main_layout.addLayout(pictures_layout)
 
+        control_panel = ControlWidget()
+        main_layout.addWidget(control_panel)
+
         self.picture_img = QLabel(self)
         self.picture_dm = QLabel(self)
         self.picture_img.setFixedSize(640, 480)
@@ -89,3 +93,10 @@ class MainWindow(QMainWindow):
         self.s_program_will_finish.emit()
         self.worker.quit()
         self.worker.wait()
+
+
+class ControlWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        
