@@ -18,6 +18,8 @@ models = {
 
 def use_ui():
     qApp = QApplication(sys.argv)
+    with open('user_ui/MacOS.qss', 'r', encoding='utf-8') as f:
+        qApp.setStyleSheet(f.read())
     window = MainWindow()
     qApp.aboutToQuit.connect(window.prepare_for_exit)
     exit(qApp.exec())

@@ -33,7 +33,7 @@ class DmVideoReader(DmMediaReader):
             yield img
 
     def close(self):
-        self._cap.release() if self._cap is not None else None
+        self._cap and self._cap.release()
 
 
 class DmImagesReader(DmMediaReader):

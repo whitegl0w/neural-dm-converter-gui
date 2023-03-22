@@ -1,11 +1,18 @@
+from dataclasses import dataclass
+from typing import Callable, Optional
+
 import cv2
 import numpy as np
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import QThread
-from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QMainWindow, QLabel, QHBoxLayout, QWidget, QVBoxLayout
+from PyQt6.QtCore import QThread, QModelIndex
+from PyQt6.QtGui import QImage, QPixmap, QPalette
+from PyQt6.QtWidgets import QMainWindow, QLabel, QHBoxLayout, QWidget, QVBoxLayout, QListView, QSpinBox, QSlider, \
+    QListWidget, QScrollArea, QCheckBox
 from numpy import typing as npt
+
+from .parameters import ControlElement, ControlProperty
+from .settings import POSTPROCESSOR_ELEMENTS
 from .waitingspinnerwidget import QtWaitingSpinner
 from dmconvert.converter import DmMediaConverter, DmMediaWriter
 from dmconvert.readers import DmVideoReader
@@ -36,13 +43,19 @@ class WorkerThread(QThread):
     def run(self):
         self.converter = DmMediaConverter(selected_model, models[selected_model], DmVideoReader(cam_number=0))
         self.converter.preprocessors.append(lambda img: cv2.resize(img, (640, 480)))
-        self.converter.postprocessors.append(create_anaglyph_processor(10, 1))
         self.converter.writers.append(DmQtWriter(lambda img, dm: self.s_image_ready.emit(img, dm)))
         self.converter.start()
 
     def stop(self):
-        if self.converter:
-            self.converter.stop()
+        self.converter and self.converter.stop()
+
+    def change_postprocessor(self, to_remove, to_add):
+        to_remove and self.converter.postprocessors.remove(to_remove)
+        to_add and self.converter.postprocessors.append(to_add)
+
+    def change_preprocessor(self, to_remove, to_add):
+        to_remove and self.converter.preprocessors.remove(to_remove)
+        to_add and self.converter.preprocessors.append(to_add)
 
 
 class MainWindow(QMainWindow):
@@ -59,9 +72,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
         pictures_layout = QHBoxLayout(self)
+        control_panel = ControlPanelWidget(POSTPROCESSOR_ELEMENTS, self)
+        control_panel.setMinimumHeight(300)
         main_layout.addLayout(pictures_layout)
-
-        control_panel = ControlWidget()
         main_layout.addWidget(control_panel)
 
         self.picture_img = QLabel(self)
@@ -77,6 +90,8 @@ class MainWindow(QMainWindow):
         self.s_program_will_finish.connect(self.worker.stop)
         self.worker.start()
         self.loading.start()
+
+        control_panel.s_control_changed.connect(self.worker.change_postprocessor)
 
         self.show()
 
@@ -95,8 +110,99 @@ class MainWindow(QMainWindow):
         self.worker.wait()
 
 
-class ControlWidget(QWidget):
-    def __init__(self):
-        super().__init__()
+class ControlPanelWidget(QWidget):
+    s_control_changed = QtCore.pyqtSignal(object, object)
 
-        
+    def __init__(self, elements: list[ControlElement], parent: QWidget = None):
+        super().__init__(parent)
+
+        main_layout = QHBoxLayout(self)
+        self.setLayout(main_layout)
+        scroll = QScrollArea(self)
+        main_layout.addWidget(scroll)
+
+        scroll_widget = QWidget(self)
+        content_layout = QVBoxLayout(self)
+        scroll.setWidget(scroll_widget)
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setWidgetResizable(True)
+        scroll_widget.setLayout(content_layout)
+
+        for elem in elements:
+            sb = ControlElementWidget(elem, self)
+            sb.s_control_changed.connect(lambda prev, curr: self.s_control_changed.emit(prev, curr))
+            content_layout.addWidget(sb)
+
+
+class ControlElementWidget(QWidget):
+    s_control_changed = QtCore.pyqtSignal(object, object)
+
+    def __init__(self, elem: ControlElement, parent: QWidget = None):
+        super().__init__(parent)
+
+        self.elem = elem
+        self.props_state = dict((prop.name, prop.min_value) for prop in elem.properties)
+        self.last_build: Optional[Callable] = None
+
+        main_layout = QHBoxLayout(self)
+        self.setLayout(main_layout)
+
+        label = QLabel(self)
+        label.setText(elem.name)
+        self.enabled = QCheckBox(self)
+        self.enabled.stateChanged.connect(self._raise_control_changed)
+        props_layout = QVBoxLayout(self)
+
+        for prop in elem.properties:
+            prop_widget = ControlPropertyWidget(prop, self)
+            prop_widget.s_prop_has_changed.connect(self._prop_changed_slot)
+            props_layout.addWidget(prop_widget)
+
+        main_layout.addWidget(label)
+        main_layout.addWidget(self.enabled)
+        main_layout.addLayout(props_layout)
+
+    def _prop_changed_slot(self, k, v):
+        self.props_state[k] = v
+        self._raise_control_changed()
+
+    def _raise_control_changed(self):
+        if self.enabled.isChecked():
+            new_build = self.elem.builder(**self.props_state)
+            self.s_control_changed.emit(self.last_build, new_build)
+            self.last_build = new_build
+        else:
+            self.s_control_changed.emit(self.last_build, None)
+            self.last_build = None
+
+
+class ControlPropertyWidget(QWidget):
+    s_prop_has_changed = QtCore.pyqtSignal(str, int)
+
+    def __init__(self, prop: ControlProperty, parent: QWidget = None):
+        super().__init__(parent)
+        self.prop = prop
+
+        prop_layout = QHBoxLayout(self)
+
+        prop_label = QLabel(self)
+        prop_label.setText(prop.caption)
+        prop_layout.addWidget(prop_label)
+
+        prop_widget = QSlider(QtCore.Qt.Orientation.Horizontal, self)
+        prop_widget.setTickPosition(QSlider.TickPosition.TicksBelow)
+        prop_widget.setMinimum(prop.min_value)
+        prop_widget.setMaximum(prop.max_value)
+        prop_widget.setValue(prop.min_value)
+        prop_layout.addWidget(prop_widget)
+
+        self.prop_value = QLabel(self)
+        self.prop_value.setText(f"{prop_widget.value()}")
+        prop_widget.valueChanged.connect(self._value_changed_slot)
+        prop_layout.addWidget(self.prop_value)
+
+        self.setLayout(prop_layout)
+
+    def _value_changed_slot(self, new_value: int):
+        self.prop_value.setText(f"{new_value}")
+        self.s_prop_has_changed.emit(self.prop.name, new_value)
