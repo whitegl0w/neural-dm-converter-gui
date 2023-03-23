@@ -74,3 +74,11 @@ class DmScreenWriter(DmMediaWriter):
 
     def close(self):
         cv2.destroyAllWindows()
+
+
+class DmQtWriter(DmMediaWriter):
+    def __init__(self, callback):
+        self._callback = callback
+
+    def write(self, img: npt.NDArray, dm: npt.NDArray):
+        self._callback(img, dm)

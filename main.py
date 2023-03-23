@@ -1,9 +1,8 @@
 import cv2
 import os
 import sys
-
 from PyQt6.QtWidgets import QApplication
-from dmconvert.postprocessors import create_anaglyph_processor
+from dmconvert.postprocessors import create_anaglyph_processor, create_dm_correcter
 from dmconvert.converter import DmMediaConverter, DmMediaReader
 from dmconvert.readers import DmVideoReader, DmImagesReader
 from dmconvert.writers import DmScreenWriter, DmImageWriter, DmVideoWriter
