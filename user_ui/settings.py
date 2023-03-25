@@ -9,8 +9,7 @@ POSTPROCESSOR_ELEMENTS = [
         builder=create_dm_correcter,
         properties=[
             ControlProperty(name="windows_size", caption="Окно (кадров)", min_value=1, max_value=50),
-            ControlProperty(name="return_num", caption="Номер кадра", min_value=1, max_value=50),
-            ControlProperty(name="move_factor", caption="Порог движения", min_value=50, max_value=700)
+            ControlProperty(name="move_factor", caption="Порог движения", min_value=50, max_value=1500)
         ]
     ),
     ControlElement(

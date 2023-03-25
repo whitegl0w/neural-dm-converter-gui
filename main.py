@@ -1,6 +1,7 @@
 import cv2
 import os
 import sys
+import qtvscodestyle
 from PyQt6.QtWidgets import QApplication
 from dmconvert.postprocessors import create_anaglyph_processor, create_dm_correcter
 from dmconvert.converter import DmMediaConverter, DmMediaReader
@@ -17,8 +18,8 @@ models = {
 
 def use_ui():
     qApp = QApplication(sys.argv)
-    with open('user_ui/MacOS.qss', 'r', encoding='utf-8') as f:
-        qApp.setStyleSheet(f.read())
+    stylesheet = qtvscodestyle.load_stylesheet(qtvscodestyle.Theme.SOLARIZED_LIGHT)
+    qApp.setStyleSheet(stylesheet)
     window = MainWindow()
     qApp.aboutToQuit.connect(window.prepare_for_exit)
     exit(qApp.exec())

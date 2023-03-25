@@ -1,7 +1,8 @@
 from collections import OrderedDict
-from PyQt6 import QtCore
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget, QVBoxLayout, QListView, QSlider, \
-    QListWidget, QScrollArea, QCheckBox, QAbstractItemView, QListWidgetItem
+    QListWidget, QScrollArea, QCheckBox, QAbstractItemView, QListWidgetItem, QGroupBox
 
 from .parameters import ControlElement, ControlProperty
 
@@ -17,15 +18,17 @@ class ControlPanelWidget(QWidget):
         main_layout = QVBoxLayout(self)
         self.setLayout(main_layout)
 
-        panel_title = QLabel(self)
-        panel_title.setText(name)
+        panel_title = QLabel(name, self)
+        title_font = QFont()
+        title_font.setBold(True)
+        panel_title.setFont(title_font)
         main_layout.addWidget(panel_title)
 
         body_layout = QHBoxLayout(self)
         main_layout.addLayout(body_layout)
 
         scroll = QScrollArea(self)
-        body_layout.addWidget(scroll)
+        body_layout.addWidget(scroll, 3)
 
         scroll_widget = QWidget(self)
         content_layout = QVBoxLayout(self)
@@ -46,7 +49,7 @@ class ControlPanelWidget(QWidget):
         self.apply_order.setResizeMode(QListView.ResizeMode.Adjust)
         self.apply_order.setMovement(QListView.Movement.Snap)
         self.apply_order.model().rowsMoved.connect(self._order_changed_slot)
-        body_layout.addWidget(self.apply_order)
+        body_layout.addWidget(self.apply_order, 1)
 
         for elem in elements:
             item = QListWidgetItem()
@@ -81,27 +84,29 @@ class ControlElementWidget(QWidget):
         main_layout = QHBoxLayout(self)
         self.setLayout(main_layout)
 
-        label = QLabel(self)
-        label.setText(elem.name)
-        self.enabled = QCheckBox(self)
-        self.enabled.stateChanged.connect(self._raise_control_changed)
-        props_layout = QVBoxLayout(self)
+        self.group = QGroupBox(elem.name, self)
+        self.group.setCheckable(True)
+        self.group.setChecked(False)
+        self.group.clicked.connect(self._raise_control_changed)
+        main_layout.addWidget(self.group)
 
+        props_layout = QVBoxLayout(self)
         for prop in elem.properties:
             prop_widget = ControlPropertyWidget(prop, self)
             prop_widget.s_prop_has_changed.connect(self._prop_changed_slot)
             props_layout.addWidget(prop_widget)
 
-        main_layout.addWidget(label)
-        main_layout.addWidget(self.enabled)
-        main_layout.addLayout(props_layout)
+        if len(elem.properties) == 0:
+            props_layout.addWidget(QLabel("Нет настраиваемых параметров", self))
+
+        self.group.setLayout(props_layout)
 
     def _prop_changed_slot(self, k, v):
         self.props_state[k] = v
         self._raise_control_changed()
 
     def _raise_control_changed(self):
-        if self.enabled.isChecked():
+        if self.group.isChecked():
             new_build = self.elem.builder(**self.props_state)
             self.s_control_changed.emit(self.elem.name, new_build)
         else:
@@ -118,21 +123,21 @@ class ControlPropertyWidget(QWidget):
 
         prop_layout = QHBoxLayout(self)
 
-        prop_label = QLabel(self)
-        prop_label.setText(prop.caption)
-        prop_layout.addWidget(prop_label)
+        prop_label = QLabel(prop.caption, self)
+        prop_label.setWordWrap(True)
+        prop_layout.addWidget(prop_label, 2)
 
         prop_widget = QSlider(QtCore.Qt.Orientation.Horizontal, self)
         prop_widget.setTickPosition(QSlider.TickPosition.TicksBelow)
         prop_widget.setMinimum(prop.min_value)
         prop_widget.setMaximum(prop.max_value)
         prop_widget.setValue(prop.min_value)
-        prop_layout.addWidget(prop_widget)
+        prop_layout.addWidget(prop_widget, 6)
 
         self.prop_value = QLabel(self)
         self.prop_value.setText(f"{prop_widget.value()}")
         prop_widget.valueChanged.connect(self._value_changed_slot)
-        prop_layout.addWidget(self.prop_value)
+        prop_layout.addWidget(self.prop_value, 1)
 
         self.setLayout(prop_layout)
 

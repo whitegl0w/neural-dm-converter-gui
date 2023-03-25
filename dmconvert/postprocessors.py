@@ -32,7 +32,7 @@ def create_anaglyph_processor(max_offset: int, direction: int = 1):
     return convert
 
 
-def create_dm_correcter(windows_size: int, return_num: int, move_factor: int):
+def create_dm_correcter(windows_size: int, move_factor: int, return_num: int = -1):
     """
     Создает постпроцессор для устранения колебания карты глубины в соседних кадрах
     :param windows_size: размер окна усреднения
@@ -62,7 +62,11 @@ def create_dm_correcter(windows_size: int, return_num: int, move_factor: int):
             dm_frame_holder.remove(dm_frame_holder[0])
             img_frame_holder.remove(img_frame_holder[0])
 
-        result_num = min(len(dm_frame_holder) - 1, return_num)
+        if return_num == -1:
+            result_num = len(dm_frame_holder) - 1
+        else:
+            result_num = min(len(dm_frame_holder) - 1, return_num)
+
         return img_frame_holder[result_num], new_dm
 
     return convert
