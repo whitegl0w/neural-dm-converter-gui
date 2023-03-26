@@ -2,18 +2,15 @@ import cv2
 import os
 import sys
 import qtvscodestyle
+
 from PyQt6.QtWidgets import QApplication
-from dmconvert.postprocessors import create_anaglyph_processor, create_dm_correcter
+from dmconvert.postprocessors import create_anaglyph_processor
 from dmconvert.converter import DmMediaConverter, DmMediaReader
 from dmconvert.readers import DmVideoReader, DmImagesReader
 from dmconvert.writers import DmScreenWriter, DmImageWriter, DmVideoWriter
 from argparse import ArgumentParser
 from user_ui.main_window import MainWindow
-
-models = {
-    'dpt_large': "models/dpt_large-midas-2f21e586.pt",
-    'midas_v21': "models/model.pt"
-}
+from models.settings import models, DEFAULT_LARGE, DEFAULT_SMALL
 
 
 def use_ui():
@@ -46,7 +43,7 @@ def use_cli():
             print('Incorrect mode, allowed: CAM, VID, IMG')
             exit(1)
 
-    model = 'midas_v21' if not args.large else 'dpt_large'
+    model = DEFAULT_SMALL if not args.large else DEFAULT_LARGE
 
     converter = DmMediaConverter(model, models[model], reader)
     converter.preprocessors.append(lambda img: cv2.resize(img, (640, 480), 1, 1, interpolation=cv2.INTER_AREA))

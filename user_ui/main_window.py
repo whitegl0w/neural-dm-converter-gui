@@ -1,8 +1,10 @@
+import os
 import numpy as np
+
 from PyQt6 import QtCore
 from PyQt6.QtCore import QThread
-from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QMainWindow, QLabel, QHBoxLayout, QWidget, QVBoxLayout
+from PyQt6.QtGui import QImage, QPixmap, QIcon, QColor
+from PyQt6.QtWidgets import QMainWindow, QLabel, QHBoxLayout, QWidget, QVBoxLayout, QStackedLayout, QStackedWidget
 from numpy import typing as npt
 
 from dmconvert.converter import DmMediaConverter
@@ -11,11 +13,7 @@ from dmconvert.writers import DmQtWriter
 from .control_panel import ControlPanelWidget
 from .settings import POSTPROCESSOR_ELEMENTS, PREPROCESSOR_ELEMENTS
 from .waitingspinnerwidget import QtWaitingSpinner
-
-models = {
-    'dpt_large': "models/dpt_large-midas-2f21e586.pt",
-    'midas_v21': "models/model.pt"
-}
+from models.settings import models
 
 selected_model = 'midas_v21'
 
@@ -48,6 +46,11 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.setWindowTitle("Depth map конвертер")
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        icon = QIcon(os.path.join(script_dir, "icon.ico"))
+        self.setWindowIcon(icon)
+
         # Поток для работы
         self.worker = WorkerThread(self)
         self.worker.finished.connect(self.worker.deleteLater)
@@ -55,11 +58,14 @@ class MainWindow(QMainWindow):
         self.s_program_will_finish.connect(self.worker.stop)
 
         # Основные виджеты
-        self.loading = QtWaitingSpinner(self)
-        main_widget = QWidget()
+        self.loading_widget = QtWaitingSpinner(self)
+        self.stacked_widget = QStackedWidget(self)
+        self.main_widget = QWidget(self)
+        self.stacked_widget.addWidget(self.loading_widget)
+        self.stacked_widget.addWidget(self.main_widget)
         main_layout = QVBoxLayout(self)
-        main_widget.setLayout(main_layout)
-        self.setCentralWidget(main_widget)
+        self.main_widget.setLayout(main_layout)
+        self.setCentralWidget(self.stacked_widget)
         # Настройка Layout-ов
         pictures_layout = QHBoxLayout(self)
         panels_layout = QHBoxLayout(self)
@@ -86,7 +92,7 @@ class MainWindow(QMainWindow):
 
         # Запуск работы
         self.worker.start()
-        self.loading.start()
+        self.loading(True)
         self.show()
 
     def show_image_slot(self, img, dm):
@@ -96,9 +102,17 @@ class MainWindow(QMainWindow):
         pix_dm = QPixmap.fromImage(QImage(dm.data, dm_w, dm_h, dm_w, QImage.Format.Format_Grayscale8))
         self.picture_img.setPixmap(pix_img)
         self.picture_dm.setPixmap(pix_dm)
-        self.loading.stop()
+        self.loading(False)
 
     def prepare_for_exit(self):
         self.s_program_will_finish.emit()
         self.worker.quit()
         self.worker.wait()
+
+    def loading(self, flag: bool):
+        if flag:
+            self.stacked_widget.setCurrentWidget(self.loading_widget)
+            self.loading_widget.start()
+        else:
+            self.stacked_widget.setCurrentWidget(self.main_widget)
+            self.loading_widget.stop()
