@@ -14,12 +14,12 @@ from models.settings import Models
 
 
 def use_ui():
-    qApp = QApplication(sys.argv)
+    q_app = QApplication(sys.argv)
     stylesheet = qtvscodestyle.load_stylesheet(qtvscodestyle.Theme.SOLARIZED_LIGHT)
-    qApp.setStyleSheet(stylesheet)
+    q_app.setStyleSheet(stylesheet)
     window = MainWindow()
-    qApp.aboutToQuit.connect(window.prepare_for_exit)
-    exit(qApp.exec())
+    q_app.aboutToQuit.connect(window.prepare_for_exit)
+    exit(q_app.exec())
 
 
 def use_cli():

@@ -1,8 +1,8 @@
 from collections import OrderedDict
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget, QVBoxLayout, QListView, QSlider, \
-    QListWidget, QScrollArea, QCheckBox, QAbstractItemView, QListWidgetItem, QGroupBox
+    QListWidget, QScrollArea, QAbstractItemView, QListWidgetItem, QGroupBox
 
 from .parameters import ControlElement, ControlProperty
 
