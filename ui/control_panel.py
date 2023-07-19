@@ -15,7 +15,7 @@ class ControlPanelWidget(QWidget):
 
         self._active_elements = OrderedDict((elem.name, None) for elem in elements)
 
-        main_layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
         panel_title = QLabel(name, self)
@@ -24,14 +24,14 @@ class ControlPanelWidget(QWidget):
         panel_title.setFont(title_font)
         main_layout.addWidget(panel_title)
 
-        body_layout = QHBoxLayout(self)
+        body_layout = QHBoxLayout()
         main_layout.addLayout(body_layout)
 
         scroll = QScrollArea(self)
         body_layout.addWidget(scroll, 3)
 
         scroll_widget = QWidget(self)
-        content_layout = QVBoxLayout(self)
+        content_layout = QVBoxLayout()
         scroll.setWidget(scroll_widget)
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setWidgetResizable(True)
@@ -81,7 +81,7 @@ class ControlElementWidget(QWidget):
         self.elem = elem
         self.props_state = dict((prop.name, prop.min_value) for prop in elem.properties)
 
-        main_layout = QHBoxLayout(self)
+        main_layout = QHBoxLayout()
         self.setLayout(main_layout)
 
         self.group = QGroupBox(elem.name, self)
@@ -90,7 +90,7 @@ class ControlElementWidget(QWidget):
         self.group.clicked.connect(self._raise_control_changed)
         main_layout.addWidget(self.group)
 
-        props_layout = QVBoxLayout(self)
+        props_layout = QVBoxLayout()
         for prop in elem.properties:
             prop_widget = ControlPropertyWidget(prop, self)
             prop_widget.s_prop_has_changed.connect(self._prop_changed_slot)
