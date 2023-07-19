@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from depth_prediction.run import create_depth_map, prepare_model
 from abc import ABC, abstractmethod
 
+from models.settings import Models
 
 RED = 2
 GREEN = 1
@@ -28,6 +29,18 @@ class DmMediaReader(ABC):
     def close(self): ...
 
 
+class DmMediaSeekableReader(DmMediaReader):
+    @abstractmethod
+    def seek(self, position_ms: int): ...
+
+    @property
+    @abstractmethod
+    def duration(self) -> int: ...
+
+    def replay(self):
+        self.seek(0)
+
+
 class DmMediaWriter(ABC):
     def prepare(self, media_params: DmMediaParams): ...
 
@@ -42,10 +55,10 @@ class DmMediaConverter:
     postprocessors: list[Callable[[npt.NDArray, npt.NDArray], tuple[npt.NDArray, npt.NDArray]]] = []
     writers: list[DmMediaWriter] = []
 
-    def __init__(self, model_type, model_path, reader: DmMediaReader):
+    def __init__(self, model: Models, reader: DmMediaReader):
         self._reader = reader
-        self._model_type = model_type
-        self._model_path = model_path
+        self._model_type = model.value.type
+        self._model_path = model.value.path
         self._is_running = False
 
     def start(self):

@@ -1,10 +1,11 @@
 import os
 import numpy as np
 
+from typing import Optional
 from PyQt6 import QtCore
 from PyQt6.QtCore import QThread
-from PyQt6.QtGui import QImage, QPixmap, QIcon, QColor
-from PyQt6.QtWidgets import QMainWindow, QLabel, QHBoxLayout, QWidget, QVBoxLayout, QStackedLayout, QStackedWidget
+from PyQt6.QtGui import QImage, QPixmap, QIcon
+from PyQt6.QtWidgets import QMainWindow, QLabel, QHBoxLayout, QWidget, QVBoxLayout, QStackedWidget, QSlider
 from numpy import typing as npt
 
 from dmconvert.converter import DmMediaConverter
@@ -13,20 +14,21 @@ from dmconvert.writers import DmQtWriter
 from .control_panel import ControlPanelWidget
 from .settings import POSTPROCESSOR_ELEMENTS, PREPROCESSOR_ELEMENTS
 from .waitingspinnerwidget import QtWaitingSpinner
-from models.settings import models
+from models.settings import Models
 
-selected_model = 'midas_v21'
+selected_model = Models.DEFAULT_SMALL
 
 
 class WorkerThread(QThread):
     image: npt.NDArray
     converter: DmMediaConverter = None
+    reader: Optional[DmVideoReader] = None
 
     s_image_ready = QtCore.pyqtSignal(np.ndarray, np.ndarray)
 
     def run(self):
-        reader = DmVideoReader(file_path="D:\\Projects\\Python\\pythonProject\\video_test\\1.mp4")
-        self.converter = DmMediaConverter(selected_model, models[selected_model], reader)
+        self.reader = DmVideoReader(cam_number=0) # file_path="video_test/1.mp4")
+        self.converter = DmMediaConverter(selected_model, self.reader)
         self.converter.writers.append(DmQtWriter(lambda img, dm: self.s_image_ready.emit(img, dm)))
         self.converter.start()
 
@@ -38,6 +40,9 @@ class WorkerThread(QThread):
 
     def change_preprocessor(self, new_list):
         self.converter.preprocessors = new_list
+
+    def seek_video(self, position: int):
+        self.reader.seek(position)
 
 
 class MainWindow(QMainWindow):
@@ -53,7 +58,6 @@ class MainWindow(QMainWindow):
 
         # Поток для работы
         self.worker = WorkerThread(self)
-        self.worker.finished.connect(self.worker.deleteLater)
         self.worker.s_image_ready.connect(self.show_image_slot)
         self.s_program_will_finish.connect(self.worker.stop)
 
@@ -69,7 +73,11 @@ class MainWindow(QMainWindow):
         # Настройка Layout-ов
         pictures_layout = QHBoxLayout(self)
         panels_layout = QHBoxLayout(self)
+        seek_widget = QSlider(QtCore.Qt.Orientation.Horizontal, self)
+        seek_widget.setMaximum(100)
+        seek_widget.valueChanged.connect(self.worker.seek_video)
         main_layout.addLayout(pictures_layout)
+        main_layout.addWidget(seek_widget)
         main_layout.addLayout(panels_layout)
         # Вывод картинок
         self.picture_img = QLabel(self)
@@ -105,9 +113,11 @@ class MainWindow(QMainWindow):
         self.loading(False)
 
     def prepare_for_exit(self):
-        self.s_program_will_finish.emit()
-        self.worker.quit()
-        self.worker.wait()
+        if self.worker.isRunning():
+            self.s_program_will_finish.emit()
+            self.worker.quit()
+            self.worker.wait()
+        self.worker.deleteLater()
 
     def loading(self, flag: bool):
         if flag:

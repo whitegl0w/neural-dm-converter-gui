@@ -9,8 +9,8 @@ from dmconvert.converter import DmMediaConverter, DmMediaReader
 from dmconvert.readers import DmVideoReader, DmImagesReader
 from dmconvert.writers import DmScreenWriter, DmImageWriter, DmVideoWriter
 from argparse import ArgumentParser
-from user_ui.main_window import MainWindow
-from models.settings import models, DEFAULT_LARGE, DEFAULT_SMALL
+from ui.main_window import MainWindow
+from models.settings import Models
 
 
 def use_ui():
@@ -43,9 +43,9 @@ def use_cli():
             print('Incorrect mode, allowed: CAM, VID, IMG')
             exit(1)
 
-    model = DEFAULT_SMALL if not args.large else DEFAULT_LARGE
+    model = Models.DEFAULT_SMALL if not args.large else Models.DEFAULT_LARGE
 
-    converter = DmMediaConverter(model, models[model], reader)
+    converter = DmMediaConverter(model, reader)
     converter.preprocessors.append(lambda img: cv2.resize(img, (640, 480), 1, 1, interpolation=cv2.INTER_AREA))
 
     for target in args.targets:

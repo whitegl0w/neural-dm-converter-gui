@@ -25,16 +25,20 @@ POSTPROCESSOR_ELEMENTS = [
         properties=[
             ControlProperty(name="factor", caption="Сила", min_value=1, max_value=50)
         ]
+    ),
+    ControlElement(
+        name="Laplacian",
+        builder=lambda: lambda img, dm: (cv2.Laplacian(img, cv2.CV_8U), dm),
+        properties=[]
     )
 ]
 
 
 PREPROCESSOR_ELEMENTS = [
     ControlElement(
-        name="Повернуть",
-        builder=lambda angle: lambda img: cv2.rotate(img, angle),
+        name="Повернуть на 180",
+        builder=lambda: lambda img: cv2.rotate(img, cv2.ROTATE_180),
         properties=[
-            ControlProperty(name="angle", caption="Угол", min_value=0, max_value=2)
         ]
     ),
     ControlElement(
