@@ -142,6 +142,8 @@ class MainWindow(QMainWindow):
     def show_image_slot(self, img, dm):
         img_h, img_w, img_channel = img.shape
         dm_h, dm_w = dm.shape
+        print(dm.shape)
+        print(dm.max(), ' ' , dm.min())
         pix_img = QPixmap.fromImage(QImage(img.data, img_w, img_h, img_w * img_channel, QImage.Format.Format_BGR888))
         pix_dm = QPixmap.fromImage(QImage(dm.data, dm_w, dm_h, dm_w, QImage.Format.Format_Grayscale8))
         self.picture_img.setPixmap(pix_img)

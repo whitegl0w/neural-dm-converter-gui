@@ -2,7 +2,8 @@ import numpy.typing as npt
 
 from dataclasses import dataclass
 from typing import Callable, Optional
-from depth_prediction.run import create_depth_map, prepare_model
+
+from dmconvert.midas_wrapper import prepare_model, process
 from abc import ABC, abstractmethod
 
 from models.settings import Models
@@ -76,7 +77,7 @@ class DmMediaConverter:
         for writer in self.writers:
             writer.prepare(media_params)
 
-        prepare_model(self._model_type, self._model_path)
+        prepare_model(self._model_path, self._model_type)
 
         try:
             for img in self._reader.data():
@@ -86,7 +87,7 @@ class DmMediaConverter:
                 for preprocessor in self.preprocessors:
                     img = preprocessor(img)
 
-                dm = create_depth_map(img)
+                dm = process(img)
 
                 for postprocessor in self.postprocessors:
                     img, dm = postprocessor(img, dm)
