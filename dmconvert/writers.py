@@ -9,6 +9,10 @@ from .converter import DmMediaWriter, DmMediaParams
 
 
 class DmVideoWriter(DmMediaWriter):
+    @staticmethod
+    def display_name() -> str:
+        return "Запись видеофайла"
+
     def __init__(self, file_name: str, codec: str = 'X264'):
         self._file_name = file_name
         self._codec = codec
@@ -31,6 +35,10 @@ class DmVideoWriter(DmMediaWriter):
 
 @dataclass
 class DmImageWriter(DmMediaWriter):
+    @staticmethod
+    def display_name() -> str:
+        return "Запись в виде набора изображений"
+
     def __init__(self, directory: str, name_rule: Callable[[int], str] = None, write_dm: bool = False,
                  write_img: bool = False, write_concat: bool = False):
         self._directory = directory
@@ -67,6 +75,10 @@ class DmImageWriter(DmMediaWriter):
 
 
 class DmScreenWriter(DmMediaWriter):
+    @staticmethod
+    def display_name() -> str:
+        return "Вывод на экран в помощью opencv"
+
     def write(self, img: npt.NDArray, dm: npt.NDArray):
         cv2.imshow('img', img)
         cv2.imshow('dm', dm)
@@ -76,7 +88,11 @@ class DmScreenWriter(DmMediaWriter):
         cv2.destroyAllWindows()
 
 
-class DmQtWriter(DmMediaWriter):
+class DmCallbackWriter(DmMediaWriter):
+    @staticmethod
+    def display_name() -> str:
+        return "Передача через callback"
+
     def __init__(self, callback):
         self._callback = callback
 

@@ -6,7 +6,7 @@ import qtvscodestyle
 from PyQt6.QtWidgets import QApplication
 from dmconvert.postprocessors import create_anaglyph_processor
 from dmconvert.converter import DmMediaConverter, DmMediaReader
-from dmconvert.readers import DmVideoReader, DmImagesReader
+from dmconvert.readers import DmVideoReader, DmImagesReader, DmCameraReader
 from dmconvert.writers import DmScreenWriter, DmImageWriter, DmVideoWriter
 from argparse import ArgumentParser
 from ui.main_window import MainWindow
@@ -36,7 +36,7 @@ def use_cli():
         case 'vid':
             reader = DmVideoReader(file_path=args.source)
         case 'cam':
-            reader = DmVideoReader(cam_number=int(args.source))
+            reader = DmCameraReader(cam_number=args.source)
         case 'img':
             reader = DmImagesReader(directory=args.source)
         case _:

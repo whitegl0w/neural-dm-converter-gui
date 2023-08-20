@@ -21,6 +21,10 @@ class DmMediaParams:
 
 
 class DmMediaReader(ABC):
+    @staticmethod
+    @abstractmethod
+    def display_name() -> str: ...
+
     def prepare(self) -> DmMediaParams: ...
 
     @abstractmethod
@@ -42,6 +46,10 @@ class DmMediaSeekableReader(DmMediaReader):
 
 
 class DmMediaWriter(ABC):
+    @staticmethod
+    @abstractmethod
+    def display_name() -> str: ...
+
     def prepare(self, media_params: DmMediaParams): ...
 
     @abstractmethod
@@ -94,3 +102,7 @@ class DmMediaConverter:
 
     def stop(self):
         self._is_running = False
+
+    @property
+    def reader(self):
+        return self._reader
