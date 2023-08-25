@@ -1,0 +1,3 @@
+[submodule "depthmap/MiDaS"]
+	path = depthmap/MiDaS
+	url = https://github.com/isl-org/MiDaS.git

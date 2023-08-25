@@ -6,3 +6,10 @@ MODELS_DIR = 'models'
 
 # Автоматически регистрировать файлы моделей (*.pt) из директории [MODELS_DIR]
 AUTODETECT_MODELS = True
+
+
+"""
+    Сторонние модули
+"""
+# Пути к сторонним модулям для настройки нейронной сети
+NESTED_REPO_PATH = ['./depthmap/MiDaS']

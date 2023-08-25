@@ -1,7 +1,10 @@
 import cv2
 import os
 import sys
+import settings
 import qtvscodestyle
+
+sys.path.extend(settings.NESTED_REPO_PATH)
 
 from PyQt6.QtWidgets import QApplication
 from dmconvert.postprocessors import create_anaglyph_processor
@@ -9,8 +12,6 @@ from dmconvert.converter import DmMediaConverter, DmMediaReader
 from dmconvert.readers import DmVideoReader, DmImagesReader, DmCameraReader
 from dmconvert.writers import DmScreenWriter, DmImageWriter, DmVideoWriter
 from argparse import ArgumentParser
-
-import settings
 from ui.main_window import MainWindow
 from depthmap_wrappers.models import Models
 

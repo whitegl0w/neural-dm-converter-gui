@@ -2,8 +2,8 @@ from typing import Any
 
 import numpy as np
 import torch
-from depthmap.midas_sources.midas.model_loader import load_model
-from depthmap.midas_sources.run import process as midas_process
+from depthmap.MiDaS.midas.model_loader import load_model
+from depthmap.MiDaS.run import process as midas_process
 from depthmap_wrappers.base import BaseDmWrapper
 from depthmap_wrappers.models import Model
 
