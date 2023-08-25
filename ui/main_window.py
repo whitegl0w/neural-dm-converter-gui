@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Type
+from typing import Type
 
 import numpy as np
 from PyQt6 import QtCore
@@ -11,12 +11,12 @@ from numpy import typing as npt
 from dmconvert.converter import DmMediaConverter, DmMediaReader, DmMediaWriter, DmMediaSeekableReader
 from dmconvert.readers import DmCameraReader, DmVideoReader, DmImagesReader
 from dmconvert.writers import DmVideoWriter, DmImageWriter, DmCallbackWriter
-from models.settings import Models
+from depthmap_wrappers.models import Models
 from .control_panel import ControlPanelWidget
 from .settings import POSTPROCESSOR_ELEMENTS, PREPROCESSOR_ELEMENTS
 from .waitingspinnerwidget import QtWaitingSpinner
 
-selected_model = Models.DEFAULT_SMALL
+selected_model = None
 
 READERS_LIST: list[Type[DmMediaReader]] = [DmVideoReader, DmCameraReader, DmImagesReader]
 WRITERS_LIST: list[Type[DmMediaWriter]] = [DmVideoWriter, DmImageWriter]
@@ -30,9 +30,6 @@ class WorkerThread(QThread):
     s_log = QtCore.pyqtSignal(str)
 
     def run(self):
-        # self.reader = DmCameraReader(cam_number=0)  # file_path="video_test/1.mp4")
-        # self.converter = DmMediaConverter(selected_model, self.reader)
-        # self.converter.writers.append(DmCallbackWriter(lambda img, dm: self.s_image_ready.emit(img, dm)))
         if self.converter:
             self.converter.start()
         else:
@@ -142,8 +139,6 @@ class MainWindow(QMainWindow):
     def show_image_slot(self, img, dm):
         img_h, img_w, img_channel = img.shape
         dm_h, dm_w = dm.shape
-        print(dm.shape)
-        print(dm.max(), ' ' , dm.min())
         pix_img = QPixmap.fromImage(QImage(img.data, img_w, img_h, img_w * img_channel, QImage.Format.Format_BGR888))
         pix_dm = QPixmap.fromImage(QImage(dm.data, dm_w, dm_h, dm_w, QImage.Format.Format_Grayscale8))
         self.picture_img.setPixmap(pix_img)
@@ -243,7 +238,7 @@ class SettingsDialog(QDialog):
         self.pb_select_path.setVisible(self.current_reader in (DmVideoReader, DmImagesReader))
 
     def apply(self):
-        model = self.models_mapping[self.cb_model.currentText()]
+        model = self.models_mapping[self.cb_model.currentText()].value
         converter = DmMediaConverter(model, self.current_reader(self.le_path.text()))
         print(self.current_reader)
         self.s_apply_settings.emit(converter)

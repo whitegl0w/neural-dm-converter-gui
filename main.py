@@ -9,8 +9,10 @@ from dmconvert.converter import DmMediaConverter, DmMediaReader
 from dmconvert.readers import DmVideoReader, DmImagesReader, DmCameraReader
 from dmconvert.writers import DmScreenWriter, DmImageWriter, DmVideoWriter
 from argparse import ArgumentParser
+
+import settings
 from ui.main_window import MainWindow
-from models.settings import Models
+from depthmap_wrappers.models import Models
 
 
 def use_ui():
@@ -63,7 +65,13 @@ def use_cli():
     converter.start()
 
 
+def apply_settings():
+    if settings.AUTODETECT_MODELS:
+        Models.autodetect()
+
+
 def main():
+    apply_settings()
     if len(sys.argv) == 1:
         use_ui()
     else:

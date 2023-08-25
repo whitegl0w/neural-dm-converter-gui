@@ -1,12 +1,9 @@
 import numpy.typing as npt
-
 from dataclasses import dataclass
 from typing import Callable, Optional
-
-from dmconvert.midas_wrapper import prepare_model, process
+from depthmap_wrappers.midas import MidasDmWrapper
 from abc import ABC, abstractmethod
-
-from models.settings import Models
+from depthmap_wrappers.models import Model
 
 RED = 2
 GREEN = 1
@@ -64,11 +61,11 @@ class DmMediaConverter:
     postprocessors: list[Callable[[npt.NDArray, npt.NDArray], tuple[npt.NDArray, npt.NDArray]]] = []
     writers: list[DmMediaWriter] = []
 
-    def __init__(self, model: Models, reader: DmMediaReader):
+    def __init__(self, model: Model, reader: DmMediaReader):
         self._reader = reader
-        self._model_type = model.value.type
-        self._model_path = model.value.path
+        self._model = model
         self._is_running = False
+        self._wrapper = MidasDmWrapper()
 
     def start(self):
         self._is_running = True
@@ -77,7 +74,7 @@ class DmMediaConverter:
         for writer in self.writers:
             writer.prepare(media_params)
 
-        prepare_model(self._model_path, self._model_type)
+        self._wrapper.prepare_model(self._model)
 
         try:
             for img in self._reader.data():
@@ -87,7 +84,7 @@ class DmMediaConverter:
                 for preprocessor in self.preprocessors:
                     img = preprocessor(img)
 
-                dm = process(img)
+                dm = self._wrapper.process(img)
 
                 for postprocessor in self.postprocessors:
                     img, dm = postprocessor(img, dm)
