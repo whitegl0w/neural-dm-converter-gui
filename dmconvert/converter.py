@@ -25,11 +25,15 @@ class ReaderError(RuntimeError):
 
 
 class DmMediaReader(ABC):
+    def is_ready(self) -> bool:
+        return True
+
     @staticmethod
     @abstractmethod
     def display_name() -> str: ...
 
-    def prepare(self) -> DmMediaParams: ...
+    @abstractmethod
+    def prepare_and_get_params(self) -> DmMediaParams: ...
 
     @abstractmethod
     def data(self) -> Optional[npt.NDArray]: ...
@@ -44,6 +48,10 @@ class DmMediaSeekableReader(DmMediaReader):
     @property
     @abstractmethod
     def duration(self) -> int: ...
+
+    @property
+    @abstractmethod
+    def progress(self) -> int: ...
 
     def replay(self):
         self.seek(0)
@@ -76,7 +84,7 @@ class DmMediaConverter:
     def start(self):
         self._is_running = True
 
-        media_params = self._reader.prepare()
+        media_params = self._reader.prepare_and_get_params()
         for writer in self.writers:
             writer.prepare(media_params)
 

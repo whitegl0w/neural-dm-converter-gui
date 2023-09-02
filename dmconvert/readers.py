@@ -25,6 +25,11 @@ def raise_if_path_not_existed(path: str):
 
 
 class DmVideoReader(DmMediaSeekableReader):
+    @property
+    def progress(self) -> int:
+        params = self.prepare_and_get_params()
+        return int(self._cap.get(cv2.CAP_PROP_POS_FRAMES) / params.fps)
+
     @staticmethod
     def display_name() -> str:
         return "Чтение видео из файла"
@@ -36,9 +41,10 @@ class DmVideoReader(DmMediaSeekableReader):
         self._media_param: Optional[DmMediaParams] = None
         self.lock = threading.Lock()
 
-    def prepare(self) -> DmMediaParams:
-        self._cap = cv2.VideoCapture(self._source)
-        self._media_param = _create_media_params(self._cap)
+    def prepare_and_get_params(self) -> DmMediaParams:
+        if not self.is_ready():
+            self._cap = cv2.VideoCapture(self._source)
+            self._media_param = _create_media_params(self._cap)
         return self._media_param
 
     def data(self) -> Generator[npt.NDArray, any, None]:
@@ -62,7 +68,11 @@ class DmVideoReader(DmMediaSeekableReader):
 
     @cached_property
     def duration(self) -> (int, int):
-        return int(self._media_param.frame_count / self._media_param.fps)
+        params = self.prepare_and_get_params()
+        return int(params.frame_count / params.fps)
+
+    def is_ready(self) -> bool:
+        return self._cap and self._cap.isOpened()
 
 
 class DmCameraReader(DmMediaReader):
@@ -75,9 +85,10 @@ class DmCameraReader(DmMediaReader):
         self._cap: Optional[VideoCapture] = None
         self._media_param: Optional[DmMediaParams] = None
 
-    def prepare(self) -> DmMediaParams:
-        self._cap = cv2.VideoCapture(self._source)
-        self._media_param = _create_media_params(self._cap)
+    def prepare_and_get_params(self) -> DmMediaParams:
+        if not self.is_ready():
+            self._cap = cv2.VideoCapture(self._source)
+            self._media_param = _create_media_params(self._cap)
         return self._media_param
 
     def data(self) -> Generator[npt.NDArray, any, None]:
@@ -92,6 +103,9 @@ class DmCameraReader(DmMediaReader):
     def close(self):
         self._cap and self._cap.release()
 
+    def is_ready(self) -> bool:
+        return self._cap and self._cap.isOpened()
+
 
 class DmImagesReader(DmMediaReader):
     @staticmethod
@@ -103,7 +117,7 @@ class DmImagesReader(DmMediaReader):
         self._directory = directory
         self._files: Optional[list[str]] = None
 
-    def prepare(self) -> DmMediaParams:
+    def prepare_and_get_params(self) -> DmMediaParams:
         self._files = glob.glob(os.path.join(self._directory, "*"))
         return DmMediaParams(
             frame_count=len(self._files)
@@ -111,3 +125,6 @@ class DmImagesReader(DmMediaReader):
 
     def data(self) -> Generator[npt.NDArray, any, None]:
         return (cv2.imread(file) for file in self._files)
+
+    def is_ready(self) -> bool:
+        return self._files and len(self._files) != 0

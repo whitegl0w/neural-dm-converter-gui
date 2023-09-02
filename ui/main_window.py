@@ -9,7 +9,7 @@ from PyQt6.QtGui import QImage, QPixmap, QIcon, QAction, QIntValidator
 from PyQt6.QtWidgets import QMainWindow, QLabel, QHBoxLayout, QWidget, QVBoxLayout, QStackedWidget, QSlider, \
     QPushButton, QToolBar, QDialog, QComboBox, QFileDialog, QLineEdit, QMessageBox
 from numpy import typing as npt
-from dmconvert.converter import DmMediaConverter, DmMediaReader, DmMediaWriter, DmMediaSeekableReader
+from dmconvert.converter import DmMediaConverter, DmMediaReader, DmMediaWriter, DmMediaSeekableReader, DmMediaParams
 from dmconvert.readers import DmCameraReader, DmVideoReader, DmImagesReader
 from dmconvert.writers import DmVideoWriter, DmImageWriter, DmCallbackWriter
 from depthmap_wrappers.models import Models
@@ -27,7 +27,7 @@ class WorkerThread(QThread):
     image: npt.NDArray
     converter: DmMediaConverter = None
 
-    s_image_ready = QtCore.pyqtSignal(np.ndarray, np.ndarray)
+    s_image_ready = QtCore.pyqtSignal(np.ndarray, np.ndarray, int)
     s_log = QtCore.pyqtSignal(str)
 
     def run(self):
@@ -41,7 +41,14 @@ class WorkerThread(QThread):
 
     def set_converter(self, converter: DmMediaConverter):
         self.converter = converter
-        self.converter.writers.append(DmCallbackWriter(lambda img, dm: self.s_image_ready.emit(img, dm)))
+
+        def ready(img, dm):
+            pos = 0
+            if isinstance(self.converter.reader, DmMediaSeekableReader):
+                pos = self.converter.reader.progress
+            self.s_image_ready.emit(img, dm, pos)
+
+        self.converter.writers.append(DmCallbackWriter(ready))
 
     def stop(self):
         self.converter and self.converter.stop()
@@ -139,11 +146,12 @@ class MainWindow(QMainWindow):
             self.m_settings.setVisible(False)
             self.worker.start()
 
-    def show_image_slot(self, img, dm):
+    def show_image_slot(self, img, dm, pos):
         img_h, img_w, img_channel = img.shape
         dm_h, dm_w = dm.shape
         pix_img = QPixmap.fromImage(QImage(img.data, img_w, img_h, img_w * img_channel, QImage.Format.Format_BGR888))
         pix_dm = QPixmap.fromImage(QImage(dm.data, dm_w, dm_h, dm_w, QImage.Format.Format_Grayscale8))
+        self.seek_widget.setValue(pos)
         self.picture_img.setPixmap(pix_img)
         self.picture_dm.setPixmap(pix_dm)
         self.loading(False)
