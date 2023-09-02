@@ -7,7 +7,7 @@ from functools import cached_property
 from cv2 import VideoCapture
 from numpy import typing as npt
 from typing import Optional, Generator
-from .converter import DmMediaReader, DmMediaParams, DmMediaSeekableReader
+from .converter import DmMediaReader, DmMediaParams, DmMediaSeekableReader, ReaderError
 
 
 def _create_media_params(cap: VideoCapture) -> DmMediaParams:
@@ -19,12 +19,18 @@ def _create_media_params(cap: VideoCapture) -> DmMediaParams:
     )
 
 
+def raise_if_path_not_existed(path: str):
+    if not os.path.exists(path):
+        raise ReaderError(f"Путь {path} не существует")
+
+
 class DmVideoReader(DmMediaSeekableReader):
     @staticmethod
     def display_name() -> str:
         return "Чтение видео из файла"
 
     def __init__(self, file_path: str):
+        raise_if_path_not_existed(file_path)
         self._source = file_path
         self._cap: Optional[VideoCapture] = None
         self._media_param: Optional[DmMediaParams] = None
@@ -93,6 +99,7 @@ class DmImagesReader(DmMediaReader):
         return "Чтение изображений из директории"
 
     def __init__(self, directory: str):
+        raise_if_path_not_existed(directory)
         self._directory = directory
         self._files: Optional[list[str]] = None
 

@@ -1,6 +1,8 @@
 import numpy.typing as npt
 from dataclasses import dataclass
 from typing import Callable, Optional
+
+from depthmap_wrappers.base import BaseDmWrapper
 from depthmap_wrappers.midas import MidasDmWrapper
 from abc import ABC, abstractmethod
 from depthmap_wrappers.models import Model
@@ -16,6 +18,10 @@ class DmMediaParams:
     width: Optional[int] = None
     height: Optional[int] = None
     frame_count: Optional[int] = None
+
+
+class ReaderError(RuntimeError):
+    pass
 
 
 class DmMediaReader(ABC):
@@ -61,11 +67,11 @@ class DmMediaConverter:
     postprocessors: list[Callable[[npt.NDArray, npt.NDArray], tuple[npt.NDArray, npt.NDArray]]] = []
     writers: list[DmMediaWriter] = []
 
-    def __init__(self, model: Model, reader: DmMediaReader):
+    def __init__(self, model: Model, reader: DmMediaReader, model_loader: BaseDmWrapper):
         self._reader = reader
         self._model = model
         self._is_running = False
-        self._wrapper = MidasDmWrapper()
+        self._wrapper = model_loader
 
     def start(self):
         self._is_running = True

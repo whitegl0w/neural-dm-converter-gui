@@ -2,9 +2,10 @@ import os
 from typing import Type
 
 import numpy as np
+import settings
 from PyQt6 import QtCore
 from PyQt6.QtCore import QThread
-from PyQt6.QtGui import QImage, QPixmap, QIcon, QAction
+from PyQt6.QtGui import QImage, QPixmap, QIcon, QAction, QIntValidator
 from PyQt6.QtWidgets import QMainWindow, QLabel, QHBoxLayout, QWidget, QVBoxLayout, QStackedWidget, QSlider, \
     QPushButton, QToolBar, QDialog, QComboBox, QFileDialog, QLineEdit, QMessageBox
 from numpy import typing as npt
@@ -13,7 +14,7 @@ from dmconvert.readers import DmCameraReader, DmVideoReader, DmImagesReader
 from dmconvert.writers import DmVideoWriter, DmImageWriter, DmCallbackWriter
 from depthmap_wrappers.models import Models
 from .control_panel import ControlPanelWidget
-from .settings import POSTPROCESSOR_ELEMENTS, PREPROCESSOR_ELEMENTS
+from .processors_settings import POSTPROCESSOR_ELEMENTS, PREPROCESSOR_ELEMENTS
 from .waitingspinnerwidget import QtWaitingSpinner
 
 selected_model = None
@@ -31,7 +32,10 @@ class WorkerThread(QThread):
 
     def run(self):
         if self.converter:
-            self.converter.start()
+            try:
+                self.converter.start()
+            except Exception as e:
+                self.s_log.emit(str(e))
         else:
             self.s_log.emit('Необходимо задать параметры работы через настройки')
 
@@ -52,7 +56,6 @@ class WorkerThread(QThread):
 
     def seek_video(self, position: int):
         if isinstance(self.converter.reader, DmMediaSeekableReader):
-            print(position)
             self.converter.reader.seek(position)
 
 
@@ -178,7 +181,6 @@ class MainWindow(QMainWindow):
         reader = converter.reader
         if isinstance(reader, DmMediaSeekableReader):
             self.seek_widget.setMaximum(reader.duration)
-            print(f"max: {reader.duration}")
         self.worker.set_converter(converter)
 
 
@@ -235,11 +237,24 @@ class SettingsDialog(QDialog):
 
     def change_reader(self, index: int):
         self.current_reader = list(self.readers_mapping.items())[index][1]
-        self.pb_select_path.setVisible(self.current_reader in (DmVideoReader, DmImagesReader))
+        self.__setup_reader_param_line_edit()
 
     def apply(self):
-        model = self.models_mapping[self.cb_model.currentText()].value
-        converter = DmMediaConverter(model, self.current_reader(self.le_path.text()))
-        print(self.current_reader)
-        self.s_apply_settings.emit(converter)
-        self.close()
+        try:
+            model = self.models_mapping[self.cb_model.currentText()].value
+            loader = settings.MODEL_LOADER()
+            converter = DmMediaConverter(model, self.current_reader(self.le_path.text()), loader)
+            self.s_apply_settings.emit(converter)
+            self.close()
+        except Exception as e:
+            MainWindow.log(str(e))
+
+    def __setup_reader_param_line_edit(self):
+        self.le_path.clear()
+        if self.current_reader == DmCameraReader:
+            self.le_path.setPlaceholderText("Введите номер камеры:")
+            self.le_path.setValidator(QIntValidator())
+        else:
+            self.le_path.setPlaceholderText("")
+            self.le_path.setValidator(None)
+        self.pb_select_path.setVisible(self.current_reader in (DmVideoReader, DmImagesReader))

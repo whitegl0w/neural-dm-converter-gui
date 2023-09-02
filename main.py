@@ -3,9 +3,6 @@ import os
 import sys
 import settings
 import qtvscodestyle
-
-sys.path.extend(settings.NESTED_REPO_PATH)
-
 from PyQt6.QtWidgets import QApplication
 from dmconvert.postprocessors import create_anaglyph_processor
 from dmconvert.converter import DmMediaConverter, DmMediaReader
@@ -48,7 +45,8 @@ def use_cli():
 
     model = Models.DEFAULT_SMALL if not args.large else Models.DEFAULT_LARGE
 
-    converter = DmMediaConverter(model, reader)
+    loader = settings.MODEL_LOADER()
+    converter = DmMediaConverter(model, reader, loader)
     converter.preprocessors.append(lambda img: cv2.resize(img, (640, 480), 1, 1, interpolation=cv2.INTER_AREA))
 
     for target in args.targets:
