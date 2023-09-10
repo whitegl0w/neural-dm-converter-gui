@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from depthmap_wrappers.base import BaseDmWrapper
-from depthmap_wrappers.midas import MidasDmWrapper
 from abc import ABC, abstractmethod
 from depthmap_wrappers.models import Model
 

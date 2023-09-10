@@ -1,3 +1,5 @@
+import enum
+
 import cv2
 import os
 import sys
@@ -28,7 +30,7 @@ def use_cli():
     parser.add_argument('source', type=str, help='Camera number for CAM, file path for FILE, folder path for IMG')
     parser.add_argument('-t', '--targets', nargs='+', type=str, help='SCREEN, IMAGES, VIDEO')
     parser.add_argument('-a', '--anaglyph', action='store_true', help='Anaglyph output')
-    parser.add_argument('-l', '--large', action='store_true', help='Use dpt-large model')
+    parser.add_argument('-m', '--model', type=str, help='Model type')
     args = parser.parse_args()
 
     reader: DmMediaReader
@@ -43,7 +45,15 @@ def use_cli():
             print('Incorrect mode, allowed: CAM, VID, IMG')
             exit(1)
 
-    model = Models.DEFAULT_SMALL if not args.large else Models.DEFAULT_LARGE
+    models_list = [m.value for m in Models]
+    if len(models_list) == 0:
+        print("There is no model to use")
+        exit(1)
+
+    if args.model:
+        model = Models.find_by_model_type(args.model)
+    else:
+        model = models_list[0]
 
     loader = settings.MODEL_LOADER()
     converter = DmMediaConverter(model, reader, loader)
@@ -56,7 +66,7 @@ def use_cli():
             case 'images':
                 converter.writers.append(DmImageWriter('output2', write_concat=True))
             case 'video':
-                converter.writers.append(DmVideoWriter('out2.avi'))
+                converter.writers.append(DmVideoWriter('out2.mp4'))
 
     if args.anaglyph:
         converter.postprocessors.append(create_anaglyph_processor(10, 1))

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Type
 
 import numpy as np
@@ -20,7 +21,10 @@ from .waitingspinnerwidget import QtWaitingSpinner
 selected_model = None
 
 READERS_LIST: list[Type[DmMediaReader]] = [DmVideoReader, DmCameraReader, DmImagesReader]
-WRITERS_LIST: list[Type[DmMediaWriter]] = [DmVideoWriter, DmImageWriter]
+READERS_TO_WRITERS_MAP: dict[Type[DmMediaReader], Type[DmMediaWriter]] = {
+    DmVideoReader: DmVideoWriter,
+    DmImagesReader: DmImageWriter
+}
 
 
 class WorkerThread(QThread):
@@ -108,7 +112,6 @@ class MainWindow(QMainWindow):
         play_stop_button.setText("Play/Pause")
         timeline_layout.addWidget(play_stop_button)
         self.seek_widget = QSlider(QtCore.Qt.Orientation.Horizontal, self)
-        # self.seek_widget.setMaximum(100)
         self.seek_widget.valueChanged.connect(self.worker.seek_video)
         timeline_layout.addWidget(self.seek_widget)
         main_layout.addLayout(pictures_layout)
@@ -227,21 +230,47 @@ class SettingsDialog(QDialog):
         self.pb_select_path.clicked.connect(self.select_path)
         path_layout.addWidget(self.pb_select_path)
 
+        l_writer = QLabel("Место сохранения (для вывода только на экран оставить пустым)", self)
+        main_layout.addWidget(l_writer)
+
+        path_out_layout = QHBoxLayout()
+        main_layout.addLayout(path_out_layout)
+        self.le_path_out = QLineEdit(self)
+        path_out_layout.addWidget(self.le_path_out)
+
+        self.pb_select_path_out = QPushButton("Выбрать", self)
+        self.pb_select_path_out.clicked.connect(self.select_path_out)
+        path_out_layout.addWidget(self.pb_select_path_out)
+
         bt_apply = QPushButton("Применить", self)
         bt_apply.clicked.connect(self.apply)
         main_layout.addWidget(bt_apply)
 
     def select_path(self):
+        path = self.get_path_dialog(save=False)
+        self.le_path.setText(path)
+
+    def select_path_out(self):
+        path = self.get_path_dialog(save=True)
+        self.le_path_out.setText(path)
+
+    def get_path_dialog(self, save: bool):
         reader = self.readers_mapping[self.cb_reader.currentText()]
         path: str
         if reader == DmVideoReader:
-            path, _ = self.file_dialog.getOpenFileName(self, "Выберите видеофайл", filter="Video (*.avi *.mp4 *.mkv)")
+            if save:
+                path, _ = self.file_dialog.getSaveFileName(self, "Выберите видеофайл",
+                                                           filter="Video (*.mp4)")
+                if Path(path).suffix.lower() != '.mp4':
+                    path = path + '.mp4'
+            else:
+                path, _ = self.file_dialog.getOpenFileName(self, "Выберите видеофайл",
+                                                           filter="Video (*.avi *.mp4 *.mkv)")
         elif reader == DmImagesReader:
-            path = self.file_dialog.getExistingDirectory(self, "Выберите директорию с изображениями")
+            path = self.file_dialog.getExistingDirectory(self, "Выберите директорию")
         else:
             path = ""
-
-        self.le_path.setText(path)
+        return path
 
     def change_reader(self, index: int):
         self.current_reader = list(self.readers_mapping.items())[index][1]
@@ -252,6 +281,7 @@ class SettingsDialog(QDialog):
             model = self.models_mapping[self.cb_model.currentText()].value
             loader = settings.MODEL_LOADER()
             converter = DmMediaConverter(model, self.current_reader(self.le_path.text()), loader)
+            self.__add_writer_if_need(converter)
             self.s_apply_settings.emit(converter)
             self.close()
         except Exception as e:
@@ -265,4 +295,13 @@ class SettingsDialog(QDialog):
         else:
             self.le_path.setPlaceholderText("")
             self.le_path.setValidator(None)
-        self.pb_select_path.setVisible(self.current_reader in (DmVideoReader, DmImagesReader))
+
+        can_select_path = self.current_reader in (DmVideoReader, DmImagesReader)
+        self.pb_select_path.setVisible(can_select_path)
+        self.le_path_out.setVisible(can_select_path)
+        self.pb_select_path_out.setVisible(can_select_path)
+
+    def __add_writer_if_need(self, converter: DmMediaConverter):
+        writer = READERS_TO_WRITERS_MAP.get(self.current_reader)
+        if writer is not None and self.le_path_out.text() != "":
+            converter.writers.append(writer(self.le_path_out.text()))

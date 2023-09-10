@@ -13,7 +13,7 @@ class DmVideoWriter(DmMediaWriter):
     def display_name() -> str:
         return "Запись видеофайла"
 
-    def __init__(self, file_name: str, codec: str = 'X264'):
+    def __init__(self, file_name: str, codec: str = 'mp4v'):
         self._file_name = file_name
         self._codec = codec
         self._cap: Optional[cv2.VideoWriter] = None
@@ -24,7 +24,7 @@ class DmVideoWriter(DmMediaWriter):
                                     (media_params.width, media_params.height))
 
     def write(self, img: npt.NDArray, dm: npt.NDArray):
-        if self._cap in None:
+        if self._cap is None:
             return
 
         self._cap.write(img)

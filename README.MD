@@ -49,7 +49,7 @@ python main.py cam 0 -t screen -a
 
 Считать видеофайл, конвертировать видео в анаглифный формат и записать в файл out.avi
 ```bash
-python main.py vid input.mp4 -t screen video -a
+python main.py vid input.mp4 -t video -a
 ```
 
 Считать видеофайл, конвертировать видео в анаглифный формат и записать в файл out.avi, процесс конвертации дублировать на экран
@@ -58,7 +58,7 @@ python main.py vid input.mp4 -t screen video -a
 python main.py vid input.mp4 -t screen video -a
 ```
 
-Считать изображения из папки input, создать для них карты глубины и записать в папку output, использовать модель DPT_LARGE для максимального качества
+Считать изображения из папки input, создать для них карты глубины и записать в папку output, использовать модель dpt_swin2_tiny_256
 ```bash 
-python main.py img input -t images -l
+python main.py img input -t images -m dpt_swin2_tiny_256
 ```
