@@ -120,8 +120,8 @@ class MainWindow(QMainWindow):
         # Вывод картинок
         self.picture_img = QLabel(self)
         self.picture_dm = QLabel(self)
-        self.picture_img.setMinimumSize(640, 480)
-        self.picture_dm.setMinimumSize(640, 480)
+        self.picture_img.setMinimumSize(320, 240)
+        self.picture_dm.setMinimumSize(320, 240)
         self.picture_dm.setScaledContents(True)
         self.picture_img.setScaledContents(True)
         pictures_layout.addWidget(self.picture_img)
@@ -131,8 +131,6 @@ class MainWindow(QMainWindow):
         preprocessors_panel = ControlPanelWidget("Препроцессоры", PREPROCESSOR_ELEMENTS, self)
         postprocessors_panel.s_control_changed.connect(self.worker.change_postprocessor)
         preprocessors_panel.s_control_changed.connect(self.worker.change_preprocessor)
-        postprocessors_panel.setMinimumHeight(300)
-        preprocessors_panel.setMinimumHeight(300)
         self.panels_layout.addWidget(preprocessors_panel)
         self.panels_layout.addWidget(postprocessors_panel)
 
